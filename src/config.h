@@ -13,5 +13,5 @@
 	#define DEBUG_RAD		0
 	#define DEBUG_CAL		1
 	#define DEBUG_SX1302	1
-	#define DEBUG_FTIME		0
+	#define DEBUG_FTIME		1
 #endif
