@@ -29,11 +29,13 @@ int _write(int fd, char *ptr, int len) {
 #define RSSI_TCOMP_COEFF_D	(2162.56)
 #define RSSI_TCOMP_COEFF_E	(0)
 
+
+#define max_rx_pkt          4
+
 uint32_t fa = (uint32_t)(867500000u);  //was: Frequency A 916.0Mhz
 uint32_t fb = (uint32_t)(868500000u);  //was: Frequency B 916.5Mhz
 uint8_t clocksource = 0;
 lgw_radio_type_t radio_type = LGW_RADIO_TYPE_SX1250; //LGW_RADIO_TYPE_SX1255, LGW_RADIO_TYPE_SX1257, LGW_RADIO_TYPE_SX1250
-uint8_t max_rx_pkt = 4;
 bool single_input_mode = false;
 float rssi_offset = RSSI_OFFSET;
 bool full_duplex = false;
@@ -59,28 +61,14 @@ const int32_t channel_if_mode0[9] = {
     -200000 /* lora service */
 };
 
-const int32_t channel_if_mode1[9] = {
-    -400000,
-    -400000,
-    -400000,
-    -400000,
-    -400000,
-    -400000,
-    -400000,
-    -400000,
-    -400000 /* lora service */
-};
-
 const uint8_t channel_rfchain_mode0[9] = { 1, 1, 1, 0, 0, 0, 0, 0, 1 };
 
-const uint8_t channel_rfchain_mode1[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-struct lgw_pkt_rx_s rxpkt[16];
+struct lgw_pkt_rx_s rxpkt[max_rx_pkt];
 
 void setup(){
     Serial.begin(115200);
-    SPI.begin();
 
+    SPI.begin();
     pinMode(SX1302_RESET, OUTPUT);
     pinMode(SX1302_CS, OUTPUT);
 
@@ -155,9 +143,6 @@ void setup(){
         if (channel_mode == 0) {
             ifconf.rf_chain = channel_rfchain_mode0[i];
             ifconf.freq_hz = channel_if_mode0[i];
-        } else if (channel_mode == 1) {
-            ifconf.rf_chain = channel_rfchain_mode1[i];
-            ifconf.freq_hz = channel_if_mode1[i];
         } else {
             Serial.print("ERROR: channel mode not supported\n");
             while(1);
@@ -223,6 +208,8 @@ void loop(){
                 Serial.println(rxpkt[i].count_us);
                 Serial.print("  size:     ");
                 Serial.println(rxpkt[i].size);
+                Serial.print("  modem_id: ");
+                Serial.println(rxpkt[i].modem_id);
                 Serial.print("  chan:     ");
                 Serial.println(rxpkt[i].if_chain);
                 Serial.print("  status:   ");
@@ -235,6 +222,8 @@ void loop(){
                 Serial.println(rxpkt[i].rf_chain);
                 Serial.print("  freq_hz   ");
                 Serial.println(rxpkt[i].freq_hz);
+                Serial.print("  fr_offset ");
+                Serial.println(rxpkt[i].freq_offset);
                 Serial.print("  snr_avg:  ");
                 Serial.println(rxpkt[i].snr);
                 Serial.print("  rssi_chan:");
@@ -243,6 +232,9 @@ void loop(){
                 Serial.println(rxpkt[i].rssis);
                 Serial.print("  crc:      ");
                 Serial.println(rxpkt[i].crc);
+                Serial.print("  status:   ");
+                Serial.println(rxpkt[i].status);
+
                 for (j = 0; j < rxpkt[i].size; j++) {
                     Serial.print(rxpkt[i].payload[j],HEX);
                     Serial.print(" ");
