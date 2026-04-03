@@ -30,7 +30,7 @@ int _write(int fd, char *ptr, int len) {
 #define RSSI_TCOMP_COEFF_E	(0)
 
 
-#define max_rx_pkt          4
+#define MAX_RX_PKT          4
 
 uint32_t fa = (uint32_t)(867500000u);  //was: Frequency A 916.0Mhz
 uint32_t fb = (uint32_t)(868500000u);  //was: Frequency B 916.5Mhz
@@ -63,12 +63,16 @@ const int32_t channel_if_mode0[9] = {
 
 const uint8_t channel_rfchain_mode0[9] = { 1, 1, 1, 0, 0, 0, 0, 0, 1 };
 
-struct lgw_pkt_rx_s rxpkt[max_rx_pkt];
+struct lgw_pkt_rx_s rxpkt[MAX_RX_PKT];
 
 void setup(){
     Serial.begin(115200);
 
-    SPI.begin();
+    //SPI.begin();
+
+    SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
+
+
     pinMode(SX1302_RESET, OUTPUT);
     pinMode(SX1302_CS, OUTPUT);
 
