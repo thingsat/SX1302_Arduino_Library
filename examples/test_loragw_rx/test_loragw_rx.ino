@@ -175,7 +175,7 @@ void setup(){
     ifconf.rf_chain = channel_rfchain_mode0[i];
     ifconf.freq_hz = channel_if_mode0[i];
     ifconf.datarate = DR_LORA_SF7;
-    ifconf.bandwidth = BW_125KHZ;  //was: BW_250KHZ
+    ifconf.bandwidth = BW_250KHZ;
     if (lgw_rxif_setconf(8, &ifconf) != LGW_HAL_SUCCESS) {
         Serial.print("ERROR: failed to configure rxif for LoRa service channel\n");
         while(1);
