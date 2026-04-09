@@ -32,8 +32,8 @@ unsigned int arg_u;
 uint8_t buff[BUFF_SIZE];
 uint32_t freq_hz = (uint32_t)((915.5*1e6) + 0.5); //sx1261 freq
 float rssi_inst;
-uint32_t fa = (uint32_t)((915.0*1e6) + 0.5);
-uint32_t fb = (uint32_t)((915.5*1e6) + 0.5);
+uint32_t fa = (uint32_t)(867500000u);  //Frequency A
+uint32_t fb = (uint32_t)(868500000u);  //Frequency B
 uint8_t clocksource = 0;
 lgw_radio_type_t radio_type = LGW_RADIO_TYPE_SX1250;
 

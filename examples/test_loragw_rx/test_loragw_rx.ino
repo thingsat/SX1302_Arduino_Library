@@ -29,8 +29,8 @@ int _write(int fd, char *ptr, int len) {
 #define RSSI_TCOMP_COEFF_D	(2162.56)
 #define RSSI_TCOMP_COEFF_E	(0)
 
-uint32_t fa = (uint32_t)(867500000u);  //was: Frequency A 916.0Mhz
-uint32_t fb = (uint32_t)(868500000u);  //was: Frequency B 916.5Mhz
+uint32_t fa = (uint32_t)(867500000u);  //Frequency A
+uint32_t fb = (uint32_t)(868500000u);  //Frequency B
 uint8_t clocksource = 0;
 lgw_radio_type_t radio_type = LGW_RADIO_TYPE_SX1250; //LGW_RADIO_TYPE_SX1255, LGW_RADIO_TYPE_SX1257, LGW_RADIO_TYPE_SX1250
 uint8_t max_rx_pkt = 4;
