@@ -1493,7 +1493,7 @@ int lgw_get_temperature(float* temperature) {
     DEBUG_PRINTF(" --- %s\n", "IN");
 
     CHECK_NULL(temperature);
-
+#if STTS75_I2C_ADDR
     switch (CONTEXT_COM_TYPE) {
         case LGW_COM_SPI:
             err = stts751_get_temperature(ts_fd, ts_addr, temperature);
@@ -1505,7 +1505,9 @@ int lgw_get_temperature(float* temperature) {
             printf("ERROR(%s:%d): wrong communication type (SHOULD NOT HAPPEN)\n", __FUNCTION__, __LINE__);
             break;
     }
-
+#else
+    *temperature = 24.0;
+#endif
     DEBUG_PRINTF(" --- %s\n", "OUT");
 
     return err;

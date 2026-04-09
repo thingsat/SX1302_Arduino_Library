@@ -1,7 +1,17 @@
+/*
+ Thingsat Basic Mission
+ Copyright (c) 2021-2026 UGA CSUG LIG
+
+ Unless required by applicable law or agreed to in writing, this
+ software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ CONDITIONS OF ANY KIND, either express or implied.
+ */
+
 extern "C" {
 #include "loragw_com.h"
 #include "loragw_aux.h"
 #include "loragw_hal.h"
+#include "lgw_utils.h"
 }
 
 #include <SPI.h>
@@ -11,28 +21,32 @@ extern "C" {
 
 using namespace std;
 
-extern "C" {
-int _write(int fd, char *ptr, int len) {
-  (void) fd;
-  return Serial.write(ptr, len);
-}
-}
-
-#define SX1302_RESET D3
-#define SX1302_CS D6
+// TODO add config for SX1250 and EU868 in a dedicated header file
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-#define RSSI_OFFSET			(-215.4)
+#ifndef SPI_CLK_SPEED
+#define SPI_CLK_SPEED 5000000
+#endif
+
+#define ENABLE_SX1250
+
+#ifdef ENABLE_SX1250
+#define RSSI_OFFSET			    (-215.4)
 #define RSSI_TCOMP_COEFF_A	(0)
 #define RSSI_TCOMP_COEFF_B	(0)
 #define RSSI_TCOMP_COEFF_C	(20.41)
 #define RSSI_TCOMP_COEFF_D	(2162.56)
 #define RSSI_TCOMP_COEFF_E	(0)
+#endif
 
-#define MAX_RX_PKT          4
+#ifndef MAX_RX_PKT
+#define MAX_RX_PKT  4
+#endif
 
-uint32_t fa = (uint32_t)(867500000u);  //Frequency A
-uint32_t fb = (uint32_t)(868500000u);  //Frequency B
+// Config for EU868
+#define FREQ_A_EU868  (867500000u)
+#define FREQ_B_EU868  (868500000u)
+
 uint8_t clocksource = 0;
 lgw_radio_type_t radio_type = LGW_RADIO_TYPE_SX1250; //LGW_RADIO_TYPE_SX1255, LGW_RADIO_TYPE_SX1257, LGW_RADIO_TYPE_SX1250
 bool single_input_mode = false;
@@ -43,12 +57,7 @@ struct lgw_conf_board_s boardconf;
 struct lgw_conf_rxrf_s rfconf;
 struct lgw_conf_rxif_s ifconf;
 
-unsigned long nb_pkt_crc_ok = 0, nb_loop = 0, cnt_loop;
-int nb_pkt;
-
-uint8_t channel_mode = 0; /* LoRaWAN-like */
-
-const int32_t channel_if_mode0[9] = {
+const int32_t channel_if_mode[9] = {
     -400000,
     -200000,
     0,
@@ -60,42 +69,32 @@ const int32_t channel_if_mode0[9] = {
     -200000 /* lora service */
 };
 
-const uint8_t channel_rfchain_mode0[9] = { 1, 1, 1, 0, 0, 0, 0, 0, 1 };
+const uint8_t channel_rfchain_mode[9] = { 1, 1, 1, 0, 0, 0, 0, 0, 1 };
 
-struct lgw_pkt_rx_s rxpkt[MAX_RX_PKT];
+void lgw_config(const uint32_t SX1302_CS_Pin, const uint32_t SX1302_RESET_Pin, const bool rx_only) { // TODO add rx_cb flag,
 
-void setup(){
-    Serial.begin(115200);
+    SPI.beginTransaction(SPISettings(SPI_CLK_SPEED, MSBFIRST, SPI_MODE0));
 
-    //SPI.begin();
+    pinMode(SX1302_RESET_Pin, OUTPUT);
+    pinMode(SX1302_CS_Pin, OUTPUT);
 
-    SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
-
-
-    pinMode(SX1302_RESET, OUTPUT);
-    pinMode(SX1302_CS, OUTPUT);
-
-    digitalWrite(SX1302_RESET, LOW);
-    digitalWrite(SX1302_CS, HIGH);
+    digitalWrite(SX1302_RESET_Pin, LOW);
+    digitalWrite(SX1302_CS_Pin, HIGH);
     
-    while(!Serial){
-        delay(1000);
-    }
-
     Serial.print("SX1302 Reset\n");
     /* Board reset */
-    digitalWrite(SX1302_RESET,HIGH);
+    digitalWrite(SX1302_RESET_Pin,HIGH);
     delay(100);
-    digitalWrite(SX1302_RESET,LOW);
+    digitalWrite(SX1302_RESET_Pin,LOW);
     delay(100);
 
-    Serial.print("===== sx1302 HAL RX test =====\n");
+    Serial.print("Configure SX1302/SX1303 concentrator\n");
 
     int i, j, x;
     /* Configure the gateway */
     memset( &boardconf, 0, sizeof boardconf);
     boardconf.lorawan_public = true;
-    boardconf.cs = SX1302_CS;
+    boardconf.cs = SX1302_CS_Pin;
     boardconf.clksrc = clocksource;
     boardconf.full_duplex = full_duplex;
     if (lgw_board_setconf(&boardconf) != LGW_HAL_SUCCESS) {
@@ -106,10 +105,10 @@ void setup(){
     /* set configuration for RF chains */
     memset( &rfconf, 0, sizeof rfconf);
     rfconf.enable = true;
-    rfconf.freq_hz = fa;
+    rfconf.freq_hz = FREQ_A_EU868;
     rfconf.type = radio_type;
     rfconf.rssi_offset = rssi_offset;
-    rfconf.tx_enable = false;
+    rfconf.tx_enable = !rx_only;
     rfconf.single_input_mode = single_input_mode;
  	rfconf.rssi_tcomp.coeff_a = RSSI_TCOMP_COEFF_A;
 	rfconf.rssi_tcomp.coeff_b = RSSI_TCOMP_COEFF_B;
@@ -120,11 +119,12 @@ void setup(){
    if (lgw_rxrf_setconf(0, &rfconf) != LGW_HAL_SUCCESS) {
         Serial.print("ERROR: failed to configure rxrf 0\n");
         while(1);
+        // return error
     }
 
     memset( &rfconf, 0, sizeof rfconf);
     rfconf.enable = true;
-    rfconf.freq_hz = fb;
+    rfconf.freq_hz = FREQ_B_EU868;
     rfconf.type = radio_type;
     rfconf.rssi_offset = rssi_offset;
     rfconf.tx_enable = false;
@@ -137,114 +137,127 @@ void setup(){
    if (lgw_rxrf_setconf(1, &rfconf) != LGW_HAL_SUCCESS) {
         Serial.print("ERROR: failed to configure rxrf 1\n");
         while(1);
+        // return error
     }
 
     /* set configuration for LoRa multi-SF channels (bandwidth cannot be set) */
     memset(&ifconf, 0, sizeof(ifconf));
     for (i = 0; i < 8; i++) {
         ifconf.enable = true;
-        if (channel_mode == 0) {
-            ifconf.rf_chain = channel_rfchain_mode0[i];
-            ifconf.freq_hz = channel_if_mode0[i];
-        } else {
-            Serial.print("ERROR: channel mode not supported\n");
-            while(1);
-        }
+        ifconf.rf_chain = channel_rfchain_mode[i];
+        ifconf.freq_hz = channel_if_mode[i];
         ifconf.datarate = DR_LORA_SF7;
         if (lgw_rxif_setconf(i, &ifconf) != LGW_HAL_SUCCESS) {
             Serial.print("ERROR: failed to configure rxif");
             Serial.println(i);
             while(1);
+        // return error
         }
     }
 
     /* set configuration for LoRa Service channel */
     memset(&ifconf, 0, sizeof(ifconf));
-    ifconf.rf_chain = channel_rfchain_mode0[i];
-    ifconf.freq_hz = channel_if_mode0[i];
+    ifconf.rf_chain = channel_rfchain_mode[i];
+    ifconf.freq_hz = channel_if_mode[i];
     ifconf.datarate = DR_LORA_SF7;
     ifconf.bandwidth = BW_250KHZ;
     if (lgw_rxif_setconf(8, &ifconf) != LGW_HAL_SUCCESS) {
         Serial.print("ERROR: failed to configure rxif for LoRa service channel\n");
         while(1);
+        // return error
     }
-
-    /* set the buffer size to hold received packets */
-    
-    Serial.print("INFO: rxpkt buffer size is set to:");
-    Serial.println(16);
-    Serial.print("INFO: Select channel mode:");
-    Serial.println(channel_mode);
-
 }
 
-void loop(){
-    int i, j, x;
-    cnt_loop += 1;
-
-    /* connect, configure and start the LoRa concentrator */
-    x = lgw_start();
-    if (x != 0) {
-        Serial.print("ERROR: failed to start the gateway\n");
-        while(1);
-    }
-
-    /* Loop until we have enough packets with CRC OK */
-    Serial.print("Waiting for packets...\n");
-    nb_pkt_crc_ok = 0;
-    while (1) {
-        /* fetch N packets */
-        nb_pkt = lgw_receive(ARRAY_SIZE(rxpkt), rxpkt);
-
-        if (nb_pkt == 0) {
-            delay(10);
-        } 
-        else {
-            for (i = 0; i < nb_pkt; i++) {
-                if (rxpkt[i].status == STAT_CRC_OK) {
-                    nb_pkt_crc_ok += 1;
-                }
+static void lgw_print_rxpkt(const struct lgw_pkt_rx_s *rxpkt) {
                 Serial.print("\n----- ");
-                Serial.print((rxpkt[i].modulation == MOD_LORA) ? "LoRa" : "FSK");
+                Serial.print((rxpkt->modulation == MOD_LORA) ? "LoRa" : "FSK");
                 Serial.println(" packet -----");
                 Serial.print("  count_us: ");
-                Serial.println(rxpkt[i].count_us);
+                Serial.println(rxpkt->count_us);
                 Serial.print("  size:     ");
-                Serial.println(rxpkt[i].size);
+                Serial.println(rxpkt->size);
                 Serial.print("  modem_id: ");
-                Serial.println(rxpkt[i].modem_id);
+                Serial.println(rxpkt->modem_id);
                 Serial.print("  chan:     ");
-                Serial.println(rxpkt[i].if_chain);
+                Serial.println(rxpkt->if_chain);
                 Serial.print("  status:   ");
-                Serial.println(rxpkt[i].status);
+                Serial.println(rxpkt->status);
                 Serial.print("  datr:     ");
-                Serial.println(rxpkt[i].datarate);
+                Serial.println(rxpkt->datarate);
                 Serial.print("  codr:     ");
-                Serial.println(rxpkt[i].coderate);
+                Serial.println(rxpkt->coderate);
+                Serial.print("  bw:       ");
+                Serial.println(rxpkt->bandwidth);
                 Serial.print("  rf_chain  ");
-                Serial.println(rxpkt[i].rf_chain);
+                Serial.println(rxpkt->rf_chain);
                 Serial.print("  freq_hz   ");
-                Serial.println(rxpkt[i].freq_hz);
+                Serial.println(rxpkt->freq_hz);
                 Serial.print("  fr_offset ");
-                Serial.println(rxpkt[i].freq_offset);
+                Serial.println(rxpkt->freq_offset);
                 Serial.print("  snr_avg:  ");
-                Serial.println(rxpkt[i].snr);
+                Serial.println(rxpkt->snr);
                 Serial.print("  rssi_chan:");
-                Serial.println(rxpkt[i].rssic);
+                Serial.println(rxpkt->rssic);
                 Serial.print("  rssi_sig :");
-                Serial.println(rxpkt[i].rssis);
+                Serial.println(rxpkt->rssis);
                 Serial.print("  crc:      ");
-                Serial.println(rxpkt[i].crc);
+                Serial.println(rxpkt->crc);
                 Serial.print("  status:   ");
-                Serial.println(rxpkt[i].status);
+                Serial.println(rxpkt->status);
 
-                for (j = 0; j < rxpkt[i].size; j++) {
-                    Serial.print(rxpkt[i].payload[j],HEX);
+                for (int j = 0; j < rxpkt->size; j++) {
+                    Serial.print(rxpkt->payload[j],HEX);
                     Serial.print(" ");
                 }
                 Serial.println("");
+}
+
+static bool _lgw_status_listening = false;
+
+void lgw_idle(void){
+    _lgw_status_listening = false;
+}
+
+static void lgw_rxpkt_cb(const struct lgw_pkt_rx_s *rxpkt) {
+  lgw_print_rxpkt(rxpkt);
+  // TODO add LoRaWAN packet printing
+  // TODO add MeshCore packet printing
+  // TODO add Meshtastic packet printing
+}
+
+static struct lgw_pkt_rx_s rxpkt[MAX_RX_PKT];
+
+void lgw_listen(void){
+
+    unsigned long nb_pkt_crc_ok = 0, nb_loop = 0;
+
+    /* Loop until we have enough packets with CRC OK */
+    Serial.print("Waiting for packets...\n");
+
+    _lgw_status_listening = true;
+
+    while (_lgw_status_listening) {
+        /* fetch N packets */
+        int nb_pkt = lgw_receive(ARRAY_SIZE(rxpkt), rxpkt);
+
+        if (nb_pkt == 0) {
+            delay(10); // ms
+        } else {
+            for (int i = 0; i < nb_pkt; i++) {
+                if (rxpkt[i].status == STAT_CRC_OK) {
+                    nb_pkt_crc_ok += 1;
+                }
+
+                // TODO add RX callback here with parameter rxpkt + i
+                lgw_rxpkt_cb(rxpkt + i);
+
+                // cleaning
+                memset(rxpkt + i, 0, sizeof(lgw_pkt_rx_s));
             }
         }
+
+        // TODO show stats periodically
     }
 
+    Serial.print("Stop listening packets\n");
 }
