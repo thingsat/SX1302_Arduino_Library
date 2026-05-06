@@ -1496,7 +1496,8 @@ int lgw_get_temperature(float* temperature) {
 #if STTS75_I2C_ADDR
     switch (CONTEXT_COM_TYPE) {
         case LGW_COM_SPI:
-            err = stts751_get_temperature(ts_fd, ts_addr, temperature);
+            //err = stts751_get_temperature(ts_fd, ts_addr, temperature);
+            printf("ERROR: function stts751_get_temperature not yet available\n");
             break;
         case LGW_COM_USB:
             err = lgw_com_get_temperature(temperature);

@@ -68,9 +68,7 @@ void setup(){
     Serial.begin(115200);
 
     //SPI.begin();
-
     SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
-
 
     pinMode(SX1302_RESET, OUTPUT);
     pinMode(SX1302_CS, OUTPUT);
@@ -84,9 +82,9 @@ void setup(){
 
     Serial.print("SX1302 Reset\n");
     /* Board reset */
-    digitalWrite(SX1302_RESET,HIGH);
+    digitalWrite(SX1302_RESET, HIGH);
     delay(100);
-    digitalWrite(SX1302_RESET,LOW);
+    digitalWrite(SX1302_RESET, LOW);
     delay(100);
 
     Serial.print("===== sx1302 HAL RX test =====\n");

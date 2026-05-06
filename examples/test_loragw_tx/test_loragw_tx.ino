@@ -18,18 +18,25 @@ int _write(int fd, char *ptr, int len) {
 }
 }
 
-#define SX1302_RESET 12
-#define SX1302_CS 13
+#define SX1302_RESET D3
+#define SX1302_CS D6
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
+#define RSSI_OFFSET         (-215.4)
+#define RSSI_TCOMP_COEFF_A	(0)
+#define RSSI_TCOMP_COEFF_B	(0)
+#define RSSI_TCOMP_COEFF_C	(20.41)
+#define RSSI_TCOMP_COEFF_D	(2162.56)
+#define RSSI_TCOMP_COEFF_E	(0)
+
 int i, x;
-uint32_t ft = (uint32_t)((915.0*1e6) + 0.5);
+uint32_t ft = (uint32_t)(867500000u);  //Frequency A
 int8_t rf_power = 20;
 uint8_t sf = 7;
-uint16_t bw_khz = 125;
+uint16_t bw_khz = 250;
 uint32_t nb_pkt = 10;
 unsigned int nb_loop = 1, cnt_loop;
-uint8_t size = 20;
+uint8_t PL_size = 20;
 char mod[64] = "LORA";
 float br_kbps = 50;
 uint8_t fdev_khz = 25;
@@ -43,6 +50,7 @@ bool invert_pol = false;
 bool no_header = false;
 bool single_input_mode = false;
 bool full_duplex = false;
+float rssi_offset = RSSI_OFFSET;
 
 struct lgw_conf_board_s boardconf;
 struct lgw_conf_rxrf_s rfconf;
@@ -55,13 +63,15 @@ bool trig_delay = false;
 
 void setup(){
     Serial.begin(115200);
-    SPI.begin();
 
-    pinMode(SX1302_RESET,OUTPUT);
-    pinMode(SX1302_CS,OUTPUT);
+    //SPI.begin();
+    SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
 
-    digitalWrite(SX1302_RESET,LOW);
-    digitalWrite(SX1302_CS,HIGH);
+    pinMode(SX1302_RESET, OUTPUT);
+    pinMode(SX1302_CS, OUTPUT);
+
+    digitalWrite(SX1302_RESET, LOW);
+    digitalWrite(SX1302_CS, HIGH);
 
     while(!Serial){
         delay(1000);
@@ -72,7 +82,12 @@ void setup(){
     txlut.size = 0;
     memset(txlut.lut, 0, sizeof txlut.lut);
 
-    printf("Sending %i LoRa packets on %u Hz (BW %i kHz, SF %i, CR %i, %i bytes payload, %i symbols preamble, %s header, %s polarity) at %i dBm\n", nb_pkt, ft, bw_khz, sf, 1, size, preamble, (no_header == false) ? "explicit" : "implicit", (invert_pol == false) ? "non-inverted" : "inverted", rf_power);
+    printf("Sending %i LoRa packets on %u Hz (BW %i kHz, SF %i, CR %i,\n",
+           nb_pkt, ft, bw_khz, sf, 1);
+    printf("%i bytes payload, %i symbols preamble, %s header, %s polarity) "
+           "at %i dBm\n", PL_size, preamble,
+           (no_header == false) ? "explicit" : "implicit",
+           (invert_pol == false) ? "non-inverted" : "inverted", rf_power);
 
     /* Configure the gateway */
     memset( &boardconf, 0, sizeof boardconf);
@@ -85,12 +100,20 @@ void setup(){
         while(1);
     }
 
+    /* configuration for RF chains */
     memset( &rfconf, 0, sizeof rfconf);
     rfconf.enable = true; /* rf chain 0 needs to be enabled for calibration to work on sx1257 */
-    rfconf.freq_hz = ft;
+    rfconf.freq_hz = ft;  // ft or fa ?
     rfconf.type = radio_type;
+    rfconf.rssi_offset = rssi_offset;  // (?)
     rfconf.tx_enable = true;
     rfconf.single_input_mode = single_input_mode;
+    rfconf.rssi_tcomp.coeff_a = RSSI_TCOMP_COEFF_A;
+    rfconf.rssi_tcomp.coeff_b = RSSI_TCOMP_COEFF_B;
+    rfconf.rssi_tcomp.coeff_c = RSSI_TCOMP_COEFF_C;
+    rfconf.rssi_tcomp.coeff_d = RSSI_TCOMP_COEFF_D;
+    rfconf.rssi_tcomp.coeff_e = RSSI_TCOMP_COEFF_E;
+
     if (lgw_rxrf_setconf(0, &rfconf) != LGW_HAL_SUCCESS) {
         printf("ERROR: failed to configure rxrf 0\n");
         while(1);
@@ -98,10 +121,17 @@ void setup(){
 
     memset( &rfconf, 0, sizeof rfconf);
     rfconf.enable = (((rf_chain == 1) || (clocksource == 1)) ? true : false);
-    rfconf.freq_hz = ft;
+    rfconf.freq_hz = ft;  // ft or fb ? We redo the config
     rfconf.type = radio_type;
+    rfconf.rssi_offset = rssi_offset;  // (?)
     rfconf.tx_enable = false;
     rfconf.single_input_mode = single_input_mode;
+    rfconf.rssi_tcomp.coeff_a = RSSI_TCOMP_COEFF_A;
+    rfconf.rssi_tcomp.coeff_b = RSSI_TCOMP_COEFF_B;
+    rfconf.rssi_tcomp.coeff_c = RSSI_TCOMP_COEFF_C;
+    rfconf.rssi_tcomp.coeff_d = RSSI_TCOMP_COEFF_D;
+    rfconf.rssi_tcomp.coeff_e = RSSI_TCOMP_COEFF_E;
+
     if (lgw_rxrf_setconf(1, &rfconf) != LGW_HAL_SUCCESS) {
         printf("ERROR: failed to configure rxrf 1\n");
         while(1);
@@ -118,9 +148,9 @@ void setup(){
         
         Serial.print("SX1302 Reset\n");
         /* Board reset */
-        digitalWrite(SX1302_RESET,HIGH);
+        digitalWrite(SX1302_RESET, HIGH);
         delay(100);
-        digitalWrite(SX1302_RESET,LOW);
+        digitalWrite(SX1302_RESET, LOW);
         delay(100);
 
         /* connect, configure and start the LoRa concentrator */
@@ -202,7 +232,7 @@ void setup(){
                     break;
             }
 
-            pkt.size = (size == 0) ? (uint8_t)random(9, 255) : size;
+            pkt.size = (PL_size == 0) ? (uint8_t)random(9, 255) : PL_size;
 
             pkt.payload[6] = (uint8_t)(i >> 0); /* FCnt */
             pkt.payload[7] = (uint8_t)(i >> 8); /* FCnt */

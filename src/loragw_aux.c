@@ -22,11 +22,11 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 #else
     #define _XOPEN_SOURCE 500
 #endif
-#include <Arduino.h>  /* printf fprintf */
 
 #include <stdio.h>  /* printf fprintf */
 #include <time.h>   /* clock_nanosleep */
 #include <math.h>   /* pow, ceil */
+#include <Arduino.h>
 
 #include "loragw_aux.h"
 #include "loragw_hal.h"
