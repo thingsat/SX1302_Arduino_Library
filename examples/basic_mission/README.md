@@ -13,7 +13,7 @@ This application illustrates a simple mission for the [Thingsat in-orbit gateway
 * [ ] Periodic telemetry (with GNSS position and temperature) using LoRaWAN with Cayenne LPP (and XOR redundancy)
 * [ ] Periodic telemetry (with GNSS position and temperature) using Meshtastic telemetry and position (protobuf)
 * [ ] Periodic telemetry (with GNSS position and temperature) using APRS format (not fake)
-* [ ] Print periodcally GNSS data (position, speed, quality, cog ...)
+* [ ] Print periodcally GNSS data (position, speed, quality, cog ...) see [tutorial](https://github.com/CampusIoT/tutorial/blob/master/mpls-gnss/partie1-gnss.md)
 * [ ] Periodic two-way ranging with other Thingsat boards
 * [ ] Spectral scan when the SX1262 module is present on Mikrobus and not into the SX1303 module (using RadioLib)
 * [ ] CAD when the SX1262 module is present on Mikrobus and not into the SX1303 module (using RadioLib)
