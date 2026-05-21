@@ -41,6 +41,7 @@ int cycle_number;
 
 void setup(){
     Serial.begin(115200);
+
     //SPI.begin();
     SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
 

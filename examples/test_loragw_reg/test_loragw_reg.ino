@@ -19,8 +19,8 @@ int _write(int fd, char *ptr, int len) {
 }
 }
 
-#define SX1302_RESET 12
-#define SX1302_CS 13
+#define SX1302_RESET D3
+#define SX1302_CS D6
 
 extern const struct lgw_reg_s loregs[LGW_TOTALREGS+1];
 
@@ -34,25 +34,28 @@ uint8_t reg_max;
 
 void setup(){
     Serial.begin(115200);
-    SPI.begin();
 
-    pinMode(SX1302_RESET,OUTPUT);
-    pinMode(SX1302_CS,OUTPUT);
+    //SPI.begin();
+    SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
 
-    digitalWrite(SX1302_RESET,LOW);
-    digitalWrite(SX1302_CS,HIGH);
+    pinMode(SX1302_RESET, OUTPUT);
+    pinMode(SX1302_CS, OUTPUT);
+
+    digitalWrite(SX1302_RESET, LOW);
+    digitalWrite(SX1302_CS, HIGH);
     while(!Serial){
         delay(1000);
     }
 
     printf("SX1302 Reset\n");
     /* Board reset */
-    digitalWrite(SX1302_RESET,HIGH);
+    digitalWrite(SX1302_RESET, HIGH);
     delay(100);
-    digitalWrite(SX1302_RESET,LOW);
+    digitalWrite(SX1302_RESET, LOW);
     delay(100);
 
-    Serial.print("Beginning of test for loragw_reg\n");
+    Serial.print("Beginning of test_loragw_reg\n");
+    delay(500);
 
     x = lgw_connect(SX1302_CS);
     if (x != LGW_REG_SUCCESS) {
@@ -66,6 +69,7 @@ void setup(){
 
     /* Test 1: read all registers and check default value for non-read-only registers */
     printf("## TEST#1: read all registers and check default value for non-read-only registers\n");
+    delay(500);
     error_found = false;
     for (i = 0; i < LGW_TOTALREGS; i++) {
         if (loregs[i].rdon == 0) {
@@ -81,11 +85,15 @@ void setup(){
         }
     }
     printf("------------------\n");
+    delay(500);
     printf(" TEST#1 %s\n", (error_found == false) ? "PASSED" : "FAILED");
+    delay(500);
     printf("------------------\n\n");
+    delay(500);
 
     /* Test 2: read/write test on all non-read-only, non-pulse, non-w0clr, non-w1clr registers */
     printf("## TEST#2: read/write test on all non-read-only, non-pulse, non-w0clr, non-w1clr registers\n");
+    delay(500);
     /* Write all registers with a random value */
     error_found = false;
     for (i = 0; i < LGW_TOTALREGS; i++) {
@@ -132,8 +140,11 @@ void setup(){
         }
     }
     printf("------------------\n");
+    delay(500);
     printf(" TEST#2 %s\n", (error_found == false) ? "PASSED" : "FAILED");
+    delay(500);
     printf("------------------\n\n");
+    delay(500);
 }
 
 void loop(){
