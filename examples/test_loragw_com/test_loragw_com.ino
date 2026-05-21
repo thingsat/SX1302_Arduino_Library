@@ -25,8 +25,8 @@ int _write(int fd, char *ptr, int len) {
 #define SX1302_REG_COMMON   0x5600
 #define SX1302_REG_AGC_MCU  0x5780
 
-#define SX1302_RESET 12
-#define SX1302_CS 13
+#define SX1302_RESET D3
+#define SX1302_CS D6
 
 /* Buffers */
 static uint8_t * test_buff = NULL;
@@ -34,20 +34,20 @@ static uint8_t * test_buff_backup = NULL;
 static uint8_t * read_buff = NULL;
 
 uint16_t max_buff_size;
-uint8_t data = 0;
+uint8_t data_1B = 0;
 int i, x;
-uint16_t size;
+uint16_t buff_size;
 int cycle_number;
 
 void setup(){
     Serial.begin(115200);
     SPI.begin();
 
-    pinMode(SX1302_RESET,OUTPUT);
-    pinMode(SX1302_CS,OUTPUT);
+    pinMode(SX1302_RESET, OUTPUT);
+    pinMode(SX1302_CS, OUTPUT);
 
-    digitalWrite(SX1302_RESET,LOW);
-    digitalWrite(SX1302_CS,HIGH);
+    digitalWrite(SX1302_RESET, LOW);
+    digitalWrite(SX1302_CS, HIGH);
 
     while(!Serial){
         delay(1000);
@@ -55,12 +55,12 @@ void setup(){
 
     Serial.print("SX1302 Reset\n");
     /* Board reset */
-    digitalWrite(SX1302_RESET,HIGH);
+    digitalWrite(SX1302_RESET, HIGH);
     delay(100);
-    digitalWrite(SX1302_RESET,LOW);
+    digitalWrite(SX1302_RESET, LOW);
     delay(100);
 
-    Serial.print("Beginning of test for loragw_com\n");
+    Serial.print("Beginning of test_loragw_com\n");
     x = lgw_com_open(SX1302_CS);
 
     /* normal R/W test */
@@ -72,16 +72,16 @@ void setup(){
     /* burst R/W test, large bursts >> LGW_BURST_CHUNK */
     /* TODO */
 
-    x = lgw_com_r(LGW_SPI_MUX_TARGET_SX1302, SX1302_REG_COMMON + 6, &data);
+    x = lgw_com_r(LGW_SPI_MUX_TARGET_SX1302, SX1302_REG_COMMON + 6, &data_1B);
     if (x != 0) {
         Serial.print("ERROR: failed to read register ");
         Serial.println(__LINE__);
         while(1);
     }
     Serial.print("SX1302 version: ");
-    Serial.println(data,HEX);
+    Serial.println(data_1B,HEX);
 
-    x = lgw_com_r(LGW_SPI_MUX_TARGET_SX1302, SX1302_REG_AGC_MCU + 0, &data);
+    x = lgw_com_r(LGW_SPI_MUX_TARGET_SX1302, SX1302_REG_AGC_MCU + 0, &data_1B);
     if (x != 0) {
         Serial.print("ERROR: failed to read register ");
         Serial.println(__LINE__);
@@ -121,8 +121,8 @@ void loop(){
      *
      * ***********************************************/
 
-    size = random(max_buff_size);
-    for (i = 0; i < size; ++i) {
+    buff_size = random(max_buff_size);
+    for (i = 0; i < buff_size; ++i) {
         test_buff[i] = random(255);
         test_buff_backup[i] = test_buff[i];
     }
@@ -130,7 +130,7 @@ void loop(){
     Serial.println(cycle_number);
 
     /* Write burst with random data */
-    x = lgw_com_wb(LGW_SPI_MUX_TARGET_SX1302, SX1302_AGC_MCU_MEM, test_buff, size);
+    x = lgw_com_wb(LGW_SPI_MUX_TARGET_SX1302, SX1302_AGC_MCU_MEM, test_buff, buff_size);
     if (x != 0) {
         Serial.print("ERROR: failed to read register ");
         Serial.println(__LINE__);
@@ -138,7 +138,7 @@ void loop(){
     }
 
     /* Read back */
-    x = lgw_com_rb(LGW_SPI_MUX_TARGET_SX1302, SX1302_AGC_MCU_MEM, read_buff, size);
+    x = lgw_com_rb(LGW_SPI_MUX_TARGET_SX1302, SX1302_AGC_MCU_MEM, read_buff, buff_size);
     if (x != 0) {
         Serial.print("ERROR: failed to read register ");
         Serial.println(__LINE__);
@@ -146,13 +146,13 @@ void loop(){
     }
 
     /* Compare read / write buffers */
-    for (i=0; ((i<size) && (test_buff_backup[i] == read_buff[i])); ++i);
-    if (i != size) {
+    for (i=0; ((i<buff_size) && (test_buff_backup[i] == read_buff[i])); ++i);
+    if (i != buff_size) {
         Serial.print("error during the buffer comparison\n");
 
         /* Print what has been written */
         Serial.print("Written values:\n");
-        for (i=0; i<size; ++i) {
+        for (i=0; i<buff_size; ++i) {
             Serial.print(test_buff_backup[i],HEX);
             if (i%16 == 15) printf("\n");
         }
@@ -160,7 +160,7 @@ void loop(){
 
         /* Print what has been read back */
         Serial.print("Read values:\n");
-        for (i=0; i<size; ++i) {
+        for (i=0; i<buff_size; ++i) {
             Serial.print(read_buff[i],HEX);
             if (i%16 == 15) printf("\n");
         }
@@ -170,7 +170,7 @@ void loop(){
         while(1);
     } else {
         Serial.print("did a R/W on a data buffer with no error\n");
-        Serial.println(size);
+        Serial.println(buff_size);
         ++cycle_number;
     }
 
