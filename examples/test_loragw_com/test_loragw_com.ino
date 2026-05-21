@@ -41,7 +41,8 @@ int cycle_number;
 
 void setup(){
     Serial.begin(115200);
-    SPI.begin();
+    //SPI.begin();
+    SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
 
     pinMode(SX1302_RESET, OUTPUT);
     pinMode(SX1302_CS, OUTPUT);
