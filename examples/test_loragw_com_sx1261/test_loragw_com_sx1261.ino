@@ -21,9 +21,9 @@ int _write(int fd, char *ptr, int len) {
 }
 
 #define BUFF_SIZE  16
-#define SX1302_RESET 12
-#define SX1302_CS 13
-#define SX1261_CS 5
+#define SX1302_RESET D3
+#define SX1302_CS  D6
+#define SX1261_CS  5  // ???
 
 uint8_t test_buff[BUFF_SIZE];
 uint8_t read_buff[BUFF_SIZE];
@@ -33,13 +33,15 @@ int i, x;
 
 void setup(){
     Serial.begin(115200);
-    SPI.begin();
 
-    pinMode(SX1302_RESET,OUTPUT);
-    pinMode(SX1302_CS,OUTPUT);
+    //SPI.begin();
+    SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
 
-    digitalWrite(SX1302_RESET,LOW);
-    digitalWrite(SX1302_CS,HIGH);
+    pinMode(SX1302_RESET, OUTPUT);
+    pinMode(SX1302_CS, OUTPUT);
+
+    digitalWrite(SX1302_RESET, LOW);
+    digitalWrite(SX1302_CS, HIGH);
 
     while(!Serial){
         delay(1000);
@@ -47,12 +49,12 @@ void setup(){
 
     Serial.print("SX1302 Reset\n");
     /* Board reset */
-    digitalWrite(SX1302_RESET,HIGH);
+    digitalWrite(SX1302_RESET, HIGH);
     delay(100);
-    digitalWrite(SX1302_RESET,LOW);
+    digitalWrite(SX1302_RESET, LOW);
     delay(100);
 
-    Serial.print("Beginning of test for loragw_com_sx1261\n");
+    Serial.print("Beginning of test_loragw_com_sx1261\n");
 
     /* Connect to the concentrator board */
     x = lgw_connect(SX1302_CS);

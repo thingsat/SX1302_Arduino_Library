@@ -11,9 +11,9 @@ extern "C" {
 #include <stdio.h>
 #include <iostream>
 
-#define SX1302_RESET 12
-#define SX1302_CS 13
-#define SX1261_CS 13
+#define SX1302_RESET D3
+#define SX1302_CS  D6
+#define SX1261_CS  13  // ???
 
 #define BUFF_SIZE 16
 
@@ -42,25 +42,27 @@ struct lgw_conf_rxrf_s rfconf;
 
 void setup(){
     Serial.begin(115200);
-    SPI.begin();
 
-    pinMode(SX1302_RESET,OUTPUT);
-    pinMode(SX1302_CS,OUTPUT);
+    //SPI.begin();
+    SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
 
-    digitalWrite(SX1302_RESET,LOW);
-    digitalWrite(SX1302_CS,HIGH);
+    pinMode(SX1302_RESET, OUTPUT);
+    pinMode(SX1302_CS, OUTPUT);
+
+    digitalWrite(SX1302_RESET, LOW);
+    digitalWrite(SX1302_CS, HIGH);
     while(!Serial){
         delay(1000);
     }
 
     Serial.print("SX1302 Reset\n");
     /* Board reset */
-    digitalWrite(SX1302_RESET,HIGH);
+    digitalWrite(SX1302_RESET, HIGH);
     delay(100);
-    digitalWrite(SX1302_RESET,LOW);
+    digitalWrite(SX1302_RESET, LOW);
     delay(100);
 
-    Serial.print("Beginning of test for loragw_sx1261_rssi\n");
+    Serial.print("Beginning of test_loragw_sx1261_rssi\n");
 
     /* Configure the gateway */
     memset( &boardconf, 0, sizeof boardconf);

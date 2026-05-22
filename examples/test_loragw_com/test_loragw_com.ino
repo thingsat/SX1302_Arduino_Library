@@ -18,7 +18,6 @@ int _write(int fd, char *ptr, int len) {
 }
 }
 
-
 #define BUFF_SIZE_SPI       1024
 
 #define SX1302_AGC_MCU_MEM  0x0000
@@ -26,7 +25,7 @@ int _write(int fd, char *ptr, int len) {
 #define SX1302_REG_AGC_MCU  0x5780
 
 #define SX1302_RESET D3
-#define SX1302_CS D6
+#define SX1302_CS    D6
 
 /* Buffers */
 static uint8_t * test_buff = NULL;

@@ -30,7 +30,7 @@ int _write(int fd, char *ptr, int len) {
 #define RSSI_TCOMP_COEFF_E	(0)
 
 int i, x;
-uint32_t ft = (uint32_t)(867500000u);  //Frequency A
+uint32_t ft = (uint32_t)(867700000u);  //was: 867500000u  //Frequency A
 int8_t rf_power = 20;
 uint8_t sf = 7;
 uint16_t bw_khz = 250;
@@ -77,17 +77,26 @@ void setup(){
         delay(1000);
     }
 
-    Serial.print("===== sx1302 HAL TX test =====\n");
+    Serial.print("SX1302 Reset\n"); // Added Reset High & Low as in test_loragw_rx
+    /* Board reset */
+    digitalWrite(SX1302_RESET, HIGH);
+    delay(100);
+    digitalWrite(SX1302_RESET, LOW);
+    delay(100);
+
+    printf("===== sx1302 HAL TX test =====\n");  //was: Serial.print()
 
     txlut.size = 0;
     memset(txlut.lut, 0, sizeof txlut.lut);
 
     printf("Sending %i LoRa packets on %u Hz (BW %i kHz, SF %i, CR %i,\n",
            nb_pkt, ft, bw_khz, sf, 1);
+    delay(100);
     printf("%i bytes payload, %i symbols preamble, %s header, %s polarity) "
            "at %i dBm\n", PL_size, preamble,
            (no_header == false) ? "explicit" : "implicit",
            (invert_pol == false) ? "non-inverted" : "inverted", rf_power);
+    delay(100);
 
     /* Configure the gateway */
     memset( &boardconf, 0, sizeof boardconf);
@@ -205,7 +214,7 @@ void setup(){
             if (trig_delay == true) {
                 if (trig_delay_us > 0) {
                     lgw_get_instcnt(&count_us);
-                    printf("count_us:%u\n", count_us);
+                    printf("count_us: %u\n", count_us);
                     pkt.count_us = count_us + trig_delay_us;
                     printf("programming TX for %u\n", pkt.count_us);
                 } else {
