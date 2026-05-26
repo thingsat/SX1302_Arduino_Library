@@ -30,10 +30,10 @@ int _write(int fd, char *ptr, int len) {
 #define RSSI_TCOMP_COEFF_E	(0)
 
 int i, x;
-uint32_t ft = (uint32_t)(867700000u);  //was: 867500000u  //Frequency A
-int8_t rf_power = 20;
-uint8_t sf = 7;
-uint16_t bw_khz = 250;
+uint32_t ft = (uint32_t)(868100000u);
+int8_t rf_power = 14;
+uint8_t sf = 12;
+uint16_t bw_khz = 125;
 uint32_t nb_pkt = 10;
 unsigned int nb_loop = 1, cnt_loop;
 uint8_t PL_size = 20;
@@ -129,7 +129,7 @@ void setup(){
     }
 
     memset( &rfconf, 0, sizeof rfconf);
-    rfconf.enable = (((rf_chain == 1) || (clocksource == 1)) ? true : false);
+    rfconf.enable = true;//(((rf_chain == 1) || (clocksource == 1)) ? true : false);
     rfconf.freq_hz = ft;  // ft or fb ? We redo the config
     rfconf.type = radio_type;
     rfconf.rssi_offset = rssi_offset;  // (?)
@@ -197,14 +197,14 @@ void setup(){
         pkt.invert_pol = invert_pol;
         pkt.preamble = preamble;
         pkt.no_header = no_header;
-        pkt.payload[0] = 0x40; /* Confirmed Data Up */
-        pkt.payload[1] = 0xAB;
-        pkt.payload[2] = 0xAB;
-        pkt.payload[3] = 0xAB;
-        pkt.payload[4] = 0xAB;
-        pkt.payload[5] = 0x00; /* FCTrl */
-        pkt.payload[6] = 0; /* FCnt */
-        pkt.payload[7] = 0; /* FCnt */
+        pkt.payload[0] = 0x40; /* (Un)confirmed Data Up */
+        pkt.payload[1] = 0xAB; /* Dev addr */
+        pkt.payload[2] = 0xAB; /* Dev addr */
+        pkt.payload[3] = 0xAB; /* Dev addr */
+        pkt.payload[4] = 0xAB; /* Dev addr */
+        pkt.payload[5] = 0x00; /* FCTrl Frame Control */
+        pkt.payload[6] = 0;    /* FCnt (Frame counter MSB) */
+        pkt.payload[7] = 0;    /* FCnt (Frame counter LSB) */
         pkt.payload[8] = 0x02; /* FPort */
         for (i = 9; i < 255; i++) {
             pkt.payload[i] = i;
@@ -243,8 +243,8 @@ void setup(){
 
             pkt.size = (PL_size == 0) ? (uint8_t)random(9, 255) : PL_size;
 
-            pkt.payload[6] = (uint8_t)(i >> 0); /* FCnt */
-            pkt.payload[7] = (uint8_t)(i >> 8); /* FCnt */
+            //pkt.payload[6] = (uint8_t)(i >> 0); /* FCnt */
+            pkt.payload[7] = (uint8_t)(i >> 0); /* FCnt */ //was: >> 8
             x = lgw_send(&pkt);
             if (x != 0) {
                 printf("ERROR: failed to send packet\n");
@@ -257,7 +257,7 @@ void setup(){
             } while ((tx_status != TX_FREE));
  
             printf("TX done\n");
-            delay(1000);
+            delay(10000);
         }
 
     printf( "\nNb packets sent: %u (%u)\n", i, cnt_loop + 1 );
