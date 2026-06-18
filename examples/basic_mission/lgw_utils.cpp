@@ -31,12 +31,12 @@ using namespace std;
 #define ENABLE_SX1250
 
 #ifdef ENABLE_SX1250
-#define RSSI_OFFSET			    (-215.4)
-#define RSSI_TCOMP_COEFF_A	(0)
-#define RSSI_TCOMP_COEFF_B	(0)
-#define RSSI_TCOMP_COEFF_C	(20.41)
-#define RSSI_TCOMP_COEFF_D	(2162.56)
-#define RSSI_TCOMP_COEFF_E	(0)
+#define RSSI_OFFSET         (-215.4)
+#define RSSI_TCOMP_COEFF_A  (0)
+#define RSSI_TCOMP_COEFF_B  (0)
+#define RSSI_TCOMP_COEFF_C  (20.41)
+#define RSSI_TCOMP_COEFF_D  (2162.56)
+#define RSSI_TCOMP_COEFF_E  (0)
 #endif
 
 #ifndef MAX_RX_PKT
@@ -71,7 +71,8 @@ const int32_t channel_if_mode[9] = {
 
 const uint8_t channel_rfchain_mode[9] = { 1, 1, 1, 0, 0, 0, 0, 0, 1 };
 
-void lgw_config(const uint32_t SX1302_CS_Pin, const uint32_t SX1302_RESET_Pin, const bool rx_only) { // TODO add rx_cb flag,
+// TODO add rx_cb flag
+void lgw_config(const uint32_t SX1302_CS_Pin, const uint32_t SX1302_RESET_Pin, const bool rx_only) {
 
     SPI.beginTransaction(SPISettings(SPI_CLK_SPEED, MSBFIRST, SPI_MODE0));
 
@@ -214,7 +215,7 @@ static void lgw_print_rxpkt(const struct lgw_pkt_rx_s *rxpkt) {
 
 static bool _lgw_status_listening = false;
 
-void lgw_idle(void){
+void lgw_idle(void) {
     _lgw_status_listening = false;
 }
 
@@ -227,7 +228,7 @@ static void lgw_rxpkt_cb(const struct lgw_pkt_rx_s *rxpkt) {
 
 static struct lgw_pkt_rx_s rxpkt[MAX_RX_PKT];
 
-void lgw_listen(void){
+void lgw_listen(void) {
 
     unsigned long nb_pkt_crc_ok = 0, nb_loop = 0;
 
