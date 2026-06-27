@@ -42,7 +42,7 @@ static void print_i2c(void) {
     }
 } */
 
-void setup() {
+void setup(void) {
     Serial.begin(115200);
 
     SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
@@ -112,7 +112,7 @@ void setup() {
 
 }
 
-void loop(){
+void loop(void){
 
     lgw_listen();
 
