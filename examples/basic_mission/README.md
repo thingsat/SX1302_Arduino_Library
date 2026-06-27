@@ -10,7 +10,7 @@ This application illustrates a simple mission for the [Thingsat in-orbit gateway
   * [ ] TLE for ZoI
   * [ ] Polygones of ZoI
   * [ ] mission parameters : payloads to send, radio parameters, extra transciever parameters ...
-* [ ] add App Clock Sync
+* [ ] add Clock Sync with DeviceTimeReq and DeviceTimeAns MAC Command (Spec 1.0.3, section 5.9)
 * [ ] add 5.9 DeviceTime commands (DeviceTimeReq, DeviceTimeAns) introduced in lorawan specification v1.0.3
 * [ ] Chirpstack Mesk Relay (Very simple implementation) (SHOULD BE TESTED)
 * [ ] Meshtastic Router (Very simple implementation)
