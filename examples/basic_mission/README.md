@@ -3,6 +3,13 @@
 This application illustrates a simple mission for the [Thingsat in-orbit gateway](https://gricad-gitlab.univ-grenoble-alpes.fr/thingsat/public/-/tree/master/cubesat_mission_3).
 
 * [ ] LoRaWAN repeater (with devaddr filtering)
+* [ ] nanopb config file
+  * [ ] SX1302/3 config
+  * [ ] networks filtering
+  * [ ] endpoints friends
+  * [ ] TLE for ZoI
+  * [ ] Polygones of ZoI
+  * [ ] mission parameters : payloads to send, radio parameters, extra transciever parameters ...
 * [ ] add App Clock Sync
 * [ ] add 5.9 DeviceTime commands (DeviceTimeReq, DeviceTimeAns) introduced in lorawan specification v1.0.3
 * [ ] Chirpstack Mesk Relay (Very simple implementation) (SHOULD BE TESTED)
