@@ -2,6 +2,9 @@
 
 This application illustrates a simple mission for the [Thingsat in-orbit gateway](https://gricad-gitlab.univ-grenoble-alpes.fr/thingsat/public/-/tree/master/cubesat_mission_3).
 
+
+## TODOLIST
+
 * [ ] LoRaWAN repeater (with devaddr filtering)
 * [ ] config all fields of global_conf.json.*
 * [ ] nanopb config file
