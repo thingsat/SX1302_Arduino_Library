@@ -313,11 +313,11 @@ static void lgw_stats_print(const unsigned long ms) {
     Serial.println(_lgw_stats.snr_lora_sum / _lgw_stats.rx_lora_cnt);
   }
   if (_lgw_stats.rx_crc_ok > 0) {
-    Serial.print("snr_lora_crc_ok_sum  : ");
+    Serial.print("snr_lora_crc_ok_avg  : ");
     Serial.println(_lgw_stats.snr_lora_crc_ok_sum / _lgw_stats.rx_crc_ok);
   }
   if (_lgw_stats.rx_bad_crc > 0) {
-    Serial.print("snr_lora_bad_crc_sum : ");
+    Serial.print("snr_lora_bad_crc_avg : ");
     Serial.println(_lgw_stats.snr_lora_bad_crc_sum / _lgw_stats.rx_bad_crc);
   }
   if (_lgw_stats.rx_cnt > 0) {
