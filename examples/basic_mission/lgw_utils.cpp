@@ -235,7 +235,7 @@ typedef struct lgw_stats {
 } lgw_stats_t;
 
 static lgw_stats_t _lgw_stats;
-static uint32_t _lgw_stats_counter = 0;
+static uint32_t _lgw_stats_report_counter = 0;
 
 static void lgw_stats_update(const struct lgw_pkt_rx_s *rxpkt) {
   _lgw_stats.count_us_last = rxpkt->count_us;
@@ -281,7 +281,7 @@ static void lgw_stats_update(const struct lgw_pkt_rx_s *rxpkt) {
 static void lgw_stats_print(const unsigned long ms) {
   // TODO add RTC time
   Serial.print(F("INFO: LGW stats #"));
-  Serial.print(_lgw_stats_counter);
+  Serial.print(_lgw_stats_report_counter++);
   Serial.print(F(" ("));
   Serial.print(ms / 1000);
   Serial.println(F(")"));
