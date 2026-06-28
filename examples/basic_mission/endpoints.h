@@ -33,6 +33,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+using namespace std;
+
 typedef enum {
 	RAK5146_SPI_GNSS, // + PPS
 	RAK5146_USB_GNSS, // + PPS
@@ -57,19 +59,19 @@ typedef enum {
 	OTHER,
 } lgw_sx130x_module_t;
 
-typedef struct  {
+typedef struct {
 	char* label;
+	lgw_sx130x_module_t module;
+	// NB: module can be used for configuring GNSS and PPS
 	uint32_t devaddr;
 	uint64_t deveui;
 	uint8_t nwkskey[16];
 	uint8_t appskey[16];
 	uint32_t fcntup; // initial frame counter for data up
-	lgw_sx130x_module_t module;
-	// NB: module can be used for configuring GNSS and PPS
 
 } lorawan_endpoint_t;
 
-bool endpoints_set_myself(const uint64_t deveui);
+const lorawan_endpoint_t* endpoints_set_myself(const uint64_t deveui);
 
 const lorawan_endpoint_t* endpoints_get_myself();
 

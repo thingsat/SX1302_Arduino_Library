@@ -19,6 +19,9 @@ extern "C" {
 #include <stdio.h>
 #include <iostream>
 
+#include "networks.h"
+#include "endpoints.h"
+
 using namespace std;
 
 extern "C" {
@@ -51,9 +54,8 @@ void print_eui64(void) {
 
     char eui_hex[20] = { 0 };
     fmt_u64_hex(eui_hex, eui);
-    Serial.print("INFO: Concentrator EUI: 0x");
-    Serial.println(eui_hex);
-    //Serial.print("INFO: Concentrator EUI: 0x" PRIx64 "\n", eui);
+    Serial.print("0x");
+    Serial.print(eui_hex);
 }
 
 void print_i2c(void) {
@@ -119,7 +121,24 @@ void setup(void) {
     }
     Serial.print("INFO: Gateway is started\n");
 
+    Serial.print(F("INFO: Concentrator EUI: "));
     print_eui64();
+    Serial.println();
+
+    const lorawan_endpoint_t* lorawan_endpoint_myself = endpoints_set_myself(eui);
+    if(lorawan_endpoint_myself == NULL) {
+        Serial.print("WARN: no endpoint for EUI ");
+        print_eui64();
+        Serial.println();
+    } else {
+        Serial.print(F("INFO: my endpoint is "));
+        Serial.print(F(lorawan_endpoint_myself->label));
+        Serial.print(F(" 0x"));
+        Serial.println(lorawan_endpoint_myself->devaddr, HEX);
+    }
+
+    Serial.println(F("INFO: friend endpoints are: "));
+    endpoints_print_all();
 
     // TODO lgw_freq_plan();
 
