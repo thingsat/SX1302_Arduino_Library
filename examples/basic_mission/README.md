@@ -5,7 +5,7 @@ This application illustrates a simple mission for the [Thingsat in-orbit gateway
 
 ## TODOLIST
 
-* [ ] LoRaWAN repeater (with devaddr filtering)
+* [ ] LoRaWAN repeater (with devaddr/network filtering)
 * [ ] config all fields of global_conf.json.*
 * [ ] nanopb config file
   * [ ] SX1302/3 config
@@ -32,6 +32,7 @@ This application illustrates a simple mission for the [Thingsat in-orbit gateway
 * [ ] LoRa 2G4 backhaul when the LR2021 module is present (using RadioLib)
 * [ ] Send [AIS](https://en.wikipedia.org/wiki/Automatic_identification_system) messages over LoRa/LoRaWAN/Meshtastic ([see spec](https://www.itu.int/dms_pubrec/itu-r/rec/m/R-REC-M.1371-5-201402-I!!PDF-F.pdf))
 * [ ] Receive and decode [AIS](https://en.wikipedia.org/wiki/Automatic_identification_system) messages over LoRa/LoRaWAN/Meshtastic ([see spec](https://www.itu.int/dms_pubrec/itu-r/rec/m/R-REC-M.1371-5-201402-I!!PDF-F.pdf))
+* [ ] log rxpkt into a [SDCard when the card reader is present](https://docs.arduino.cc/libraries/sd/)
 * [ ] add platform.io project
 
 
