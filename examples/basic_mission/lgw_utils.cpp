@@ -24,28 +24,9 @@ using namespace std;
 // TODO add config for SX1250 and EU868 in a dedicated header file
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-#ifndef SPI_CLK_SPEED
-#define SPI_CLK_SPEED 5000000
-#endif
-
-#define ENABLE_SX1250
-
-#ifdef ENABLE_SX1250
-#define RSSI_OFFSET         (-215.4)
-#define RSSI_TCOMP_COEFF_A  (0)
-#define RSSI_TCOMP_COEFF_B  (0)
-#define RSSI_TCOMP_COEFF_C  (20.41)
-#define RSSI_TCOMP_COEFF_D  (2162.56)
-#define RSSI_TCOMP_COEFF_E  (0)
-#endif
-
-#ifndef MAX_RX_PKT
-#define MAX_RX_PKT  4
-#endif
-
-// Config for EU868
-#define FREQ_A_EU868  (867500000u)
-#define FREQ_B_EU868  (868500000u)
+#include "config.h"
+#include "networks.h"
+#include "endpoints.h"
 
 uint8_t clocksource = 0;
 lgw_radio_type_t radio_type = LGW_RADIO_TYPE_SX1250; //LGW_RADIO_TYPE_SX1255, LGW_RADIO_TYPE_SX1257, LGW_RADIO_TYPE_SX1250
@@ -57,19 +38,9 @@ struct lgw_conf_board_s boardconf;
 struct lgw_conf_rxrf_s rfconf;
 struct lgw_conf_rxif_s ifconf;
 
-const int32_t channel_if_mode[9] = {
-    -400000,
-    -200000,
-    0,
-    -400000,
-    -200000,
-    0,
-    200000,
-    400000,
-    -200000 /* lora service */
-};
+const int32_t channel_if_mode[9] = CHANNEL_IF_MODE;
 
-const uint8_t channel_rfchain_mode[9] = { 1, 1, 1, 0, 0, 0, 0, 0, 1 };
+const uint8_t channel_rfchain_mode[9] = CHANNEL_RFCHAIN_MODE;
 
 // TODO add rx_cb flag
 void lgw_config(const uint32_t SX1302_CS_Pin, const uint32_t SX1302_RESET_Pin, const bool rx_only) {
@@ -219,12 +190,173 @@ void lgw_idle(void) {
     _lgw_status_listening = false;
 }
 
+// LGW Stats
+
+typedef struct lgw_stats {
+    uint32_t count_us_last;
+    uint32_t rx_cnt;
+    uint32_t rx_lora_cnt;
+    uint32_t rx_fsk_cnt;
+    uint32_t rx_crc_ok;
+    uint32_t rx_bad_crc;
+    uint32_t rx_no_crc;
+    uint32_t ftime_cnt;
+    uint32_t rx_size_cnt;
+    float    snr_lora_sum;
+    float    snr_min_lora_sum;
+    float    snr_max_lora_sum;
+    float    rssis_sum;
+    float    rssic_sum;
+
+    // counters for LoRaWAN frames (type, dr, size)
+
+    // mission
+    uint32_t rx_downlink_cnt;
+    uint32_t rx_friend_cnt;
+    uint32_t rx_friend_replay_cnt;
+    uint32_t rx_friend_badmic_cnt;
+
+    uint32_t tx_cnt;
+    uint32_t tx_repeat_cnt;
+
+    // packet forwarder
+    uint32_t rx_forward_cnt; // UDP or MQTT if MCU has IP connection
+} lgw_stats_t;
+
+static lgw_stats_t _lgw_stats;
+static uint32_t _lgw_stats_counter = 0;
+
+static void lgw_stats_update(const struct lgw_pkt_rx_s *rxpkt) {
+    _lgw_stats.count_us_last = rxpkt->count_us;
+    _lgw_stats.rx_cnt++;
+    _lgw_stats.rx_size_cnt+=rxpkt->size;
+    switch(rxpkt->modulation) {
+        case MOD_LORA: 
+            _lgw_stats.rx_lora_cnt++;
+            _lgw_stats.snr_lora_sum += rxpkt->snr;
+            break;
+        case MOD_FSK: 
+            _lgw_stats.rx_lora_cnt++;
+            _lgw_stats.snr_lora_sum += rxpkt->snr;
+            break;
+        case MOD_CW: 
+        case MOD_UNDEFINED:
+        default:
+            break; 
+    }
+    switch(rxpkt->status){
+        case STAT_CRC_BAD:
+            _lgw_stats.rx_bad_crc++;
+            break;
+        case STAT_CRC_OK:
+            _lgw_stats.rx_crc_ok++;
+            break;
+        case STAT_NO_CRC:
+            _lgw_stats.rx_no_crc++;
+            break;
+        case STAT_UNDEFINED:
+        default:
+            break;
+    }
+    _lgw_stats.rssic_sum+=rxpkt->rssic;
+    _lgw_stats.rssis_sum+=rxpkt->rssis;
+    if(rxpkt->ftime_received) {
+        _lgw_stats.ftime_cnt++;
+    }
+}
+
+static void lgw_stats_print(const unsigned long ms) {
+    // TODO add RTC time    
+    Serial.print(F("INFO: LGW stats #"));
+    Serial.print(_lgw_stats_counter);
+    Serial.print(F(" ("));
+    Serial.print(ms/1000);
+    Serial.println(F(")"));
+    
+    if(_lgw_stats.rx_cnt > 0) {
+        Serial.print("count_us_last  : ");
+        Serial.println(_lgw_stats.count_us_last);
+    }
+    Serial.print("rx_cnt         : ");
+    Serial.println(_lgw_stats.rx_cnt);
+    if(_lgw_stats.rx_cnt > 0) {
+        Serial.print("rx_lora_cnt    : ");
+        Serial.println(_lgw_stats.rx_lora_cnt);
+        Serial.print("rx_fsk_cnt     : ");
+        Serial.println(_lgw_stats.rx_fsk_cnt);
+        Serial.print("rx_crc_ok      : ");
+        Serial.println(_lgw_stats.rx_crc_ok);
+        Serial.print("rx_bad_crc     : ");
+        Serial.println(_lgw_stats.rx_bad_crc);
+        Serial.print("rx_no_crc      : ");
+        Serial.println(_lgw_stats.rx_no_crc);
+        Serial.print("ftime_cnt      : ");
+        Serial.println(_lgw_stats.ftime_cnt);
+        Serial.print("rx_size_avg    : ");
+        Serial.println(1.0*_lgw_stats.rx_size_cnt/_lgw_stats.rx_cnt);
+    }
+    if(_lgw_stats.rx_lora_cnt > 0) {
+        Serial.print("snr_lora_avg   : ");
+        Serial.println(_lgw_stats.snr_lora_sum/_lgw_stats.rx_lora_cnt);
+    }
+    if(_lgw_stats.rx_cnt > 0) {
+        Serial.print("rssis_avg      : ");
+        Serial.println(_lgw_stats.rssis_sum/_lgw_stats.rx_cnt);
+        Serial.print("rssic_avg      : ");
+        Serial.println(_lgw_stats.rssic_sum/_lgw_stats.rx_cnt);
+    }
+    Serial.print("tx_cnt         : ");
+    Serial.println(_lgw_stats.tx_cnt);
+    Serial.print("tx_repeat_cnt  : ");
+    Serial.println(_lgw_stats.tx_repeat_cnt);
+}
+
+static void lgw_stats_reset(void) {
+    // TODO fast reset
+    memset(&_lgw_stats,0,sizeof(_lgw_stats));
+    _lgw_stats.snr_lora_sum = 0.0;
+    _lgw_stats.snr_min_lora_sum = 0.0;
+    _lgw_stats.snr_max_lora_sum = 0.0;
+    _lgw_stats.rssis_sum = 0.0;
+    _lgw_stats.rssic_sum = 0.0;
+}
+
+static void lgw_stats_setup(void) {
+    lgw_stats_reset();
+}
+
+
+// LGW callback functions
+
 static void lgw_rxpkt_cb(const struct lgw_pkt_rx_s *rxpkt) {
   lgw_print_rxpkt(rxpkt);
+
+  lgw_stats_update(rxpkt);
+
   // TODO add LoRaWAN packet printing
+  // TODO filter and repeat LoRaWAN packet
+  // TODO filter and repeat Chirpstack mesh
   // TODO add MeshCore packet printing
+  // TODO filter and repeat MeshCore packet
   // TODO add Meshtastic packet printing
+  // TODO filter and repeat Meshtastic packet
 }
+
+static unsigned long lgw_period_cb_last_call_in_ms = 0;
+
+static void lgw_period_cb(void) {
+
+    const unsigned long ms = millis();
+    if(ms > lgw_period_cb_last_call_in_ms + LGW_PERIOD_CB_PERIOD) {
+        lgw_period_cb_last_call_in_ms = ms;
+
+        lgw_stats_print(ms);
+        lgw_stats_reset();
+
+        // TODO execute periodic frame transmit according the mission
+    }
+}
+
 
 static struct lgw_pkt_rx_s rxpkt[MAX_RX_PKT];
 
@@ -233,7 +365,7 @@ void lgw_listen(void) {
     unsigned long nb_pkt_crc_ok = 0, nb_loop = 0;
 
     /* Loop until we have enough packets with CRC OK */
-    Serial.print("Waiting for packets...\n");
+    Serial.print("INFO: Waiting for packets...\n");
 
     _lgw_status_listening = true;
 
@@ -245,6 +377,7 @@ void lgw_listen(void) {
             delay(10); // ms
         } else {
             for (int i = 0; i < nb_pkt; i++) {
+
                 if (rxpkt[i].status == STAT_CRC_OK) {
                     nb_pkt_crc_ok += 1;
                 }
@@ -257,8 +390,8 @@ void lgw_listen(void) {
             }
         }
 
-        // TODO show stats periodically
+        lgw_period_cb();
     }
 
-    Serial.print("Stop listening packets\n");
+    Serial.print("INFO: Stop listening packets\n");
 }

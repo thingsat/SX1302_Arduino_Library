@@ -1,6 +1,6 @@
 /*
- SX1302 LGW Utilities
- Copyright (c) 2021-2025 UGA CSUG LIG
+ Thingsat Basic Mission
+ Copyright (c) 2021-2026 UGA CSUG LIG
 
  Unless required by applicable law or agreed to in writing, this
  software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -21,6 +21,8 @@ static void lgw_print_rxpkt(const struct lgw_pkt_rx_s *rxpkt);
 void lgw_idle(void);
 
 static void lgw_rxpkt_cb(const struct lgw_pkt_rx_s *rxpkt);
+
+static void lgw_period_cb(void);
 
 void lgw_listen(void);
 
