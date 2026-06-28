@@ -3,6 +3,7 @@
 This application illustrates a simple mission for the [Thingsat in-orbit gateway](https://gricad-gitlab.univ-grenoble-alpes.fr/thingsat/public/-/tree/master/cubesat_mission_3).
 
 * [ ] LoRaWAN repeater (with devaddr filtering)
+* [ ] config all fields of global_conf.json.*
 * [ ] nanopb config file
   * [ ] SX1302/3 config
   * [ ] networks filtering
@@ -28,14 +29,13 @@ This application illustrates a simple mission for the [Thingsat in-orbit gateway
 * [ ] LoRa 2G4 backhaul when the LR2021 module is present (using RadioLib)
 * [ ] Send [AIS](https://en.wikipedia.org/wiki/Automatic_identification_system) messages over LoRa/LoRaWAN/Meshtastic ([see spec](https://www.itu.int/dms_pubrec/itu-r/rec/m/R-REC-M.1371-5-201402-I!!PDF-F.pdf))
 * [ ] Receive and decode [AIS](https://en.wikipedia.org/wiki/Automatic_identification_system) messages over LoRa/LoRaWAN/Meshtastic ([see spec](https://www.itu.int/dms_pubrec/itu-r/rec/m/R-REC-M.1371-5-201402-I!!PDF-F.pdf))
+* [ ] add platform.io project
 
 
 ## Tested boards
 
-* [x] [Thingsat INISAT](https://github.com/csu-grenoble/flatsat/tree/main/Hardware/Thingsat_INISAT) with Nucleo32 L432KC and RAK5134
-* [x] [Thingsat ProtoSEED](https://gricad-gitlab.univ-grenoble-alpes.fr/thingsat/seed/-/tree/main/seed_thingsat_protoseed?ref_type=heads) with Nucleo32 L432KC and RAK5134
-* [ ] [Thingsat ProtoSEED](https://gricad-gitlab.univ-grenoble-alpes.fr/thingsat/seed/-/tree/main/seed_thingsat_protoseed?ref_type=heads) with Arduino Nano ESP32 and RAK5134
+* [x] [Thingsat INISAT](https://github.com/csu-grenoble/flatsat/tree/main/Hardware/Thingsat_INISAT) with Nucleo32 L432KC and RAK5134/WM1302
+* [x] [Thingsat ProtoSEED](https://gricad-gitlab.univ-grenoble-alpes.fr/thingsat/seed/-/tree/main/seed_thingsat_protoseed?ref_type=heads) with Nucleo32 L432KC and RAK5134/WM1302
+* [ ] [Thingsat ProtoSEED](https://gricad-gitlab.univ-grenoble-alpes.fr/thingsat/seed/-/tree/main/seed_thingsat_protoseed?ref_type=heads) with Arduino Nano ESP32 and RAK5134/WM1302
 
 [Other supported SX1302/SX1303 modules](https://github.com/thingsat/sx1302_modules)
-
-
