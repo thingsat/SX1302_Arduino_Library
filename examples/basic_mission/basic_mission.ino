@@ -28,10 +28,7 @@ int _write(int fd, char *ptr, int len) {
 }
 }
 
-// TODO Add conditional module : For Thingsat INISAT and Thingsat ProtoSEED with Nucleo L432KC
-
-#define SX1302_RESET    D3
-#define SX1302_CS       D6
+#include "config.h"
 
 /*
 static void print_i2c(void) {
@@ -42,8 +39,29 @@ static void print_i2c(void) {
     }
 } */
 
-void setup(void) {
-    Serial.begin(115200);
+static uint64_t eui = 0;
+
+void print_eui64(void) {
+    // Get lgw EUI
+    int err = lgw_get_eui(&eui);
+    if (err != 0) {
+        Serial.print("ERROR: failed to get EUI\n");
+        //return EXIT_FAILURE;
+    }
+
+    char eui_hex[20] = { 0 };
+    fmt_u64_hex(eui_hex, eui);
+    Serial.print("INFO: Concentrator EUI: 0x");
+    Serial.println(eui_hex);
+    //Serial.print("INFO: Concentrator EUI: 0x" PRIx64 "\n", eui);
+}
+
+void print_i2c(void) {
+    // TODO https://github.com/RobTillaart/I2C_SCANNER/blob/master/I2C_SCANNER.h
+}
+
+
+void setup_sx1302(void) {
 
     SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
 
@@ -53,14 +71,21 @@ void setup(void) {
     digitalWrite(SX1302_RESET, LOW);
     digitalWrite(SX1302_CS, HIGH);
 
+}
+
+
+void setup(void) {
+    Serial.begin(115200);
+
     while(!Serial){
         delay(1000);
     }
 
-    //printf("INFO: ===========================\n");  //was: Serial.print
-    puts("INFO: Thingsat Basic Mission");  //was: Serial.print
-    delay(100);
-    //printf("INFO: ===========================\n");  //was: Serial.print
+    delay(1000);
+
+    puts("\nINFO: ===========================");
+    puts("INFO: Thingsat Basic Mission");
+    puts("INFO: ===========================\n");
 
 /*
 #if GPS_UART_ENABLE == 1
@@ -83,30 +108,26 @@ void setup(void) {
 
 //  print_git();
 
-//  print_i2c();
+    print_i2c(); // I2C scanner
 
     lgw_config(SX1302_CS, SX1302_RESET, false);
 
     /* connect, configure and start the LoRa concentrator */
-    if (lgw_start() != 0) {
+    while (lgw_start() != 0) {
         Serial.print("ERROR: failed to start the gateway\n");
-        while(true);
+        delay(1000);
     }
     Serial.print("INFO: Gateway is started\n");
 
-    // Get lgw EUI
-    uint64_t eui;
-    int err = lgw_get_eui(&eui);
-    if (err != 0) {
-        Serial.print("ERROR: failed to get EUI\n");
-        //return EXIT_FAILURE;
-    }
+    print_eui64();
 
-    char eui_hex[20] = { 0 };
-    fmt_u64_hex(eui_hex, eui);
-    Serial.print("Concentrator EUI: 0x");
-	Serial.println(eui_hex);
-    //Serial.print("Concentrator EUI: 0x" PRIx64 "\n", eui);
+    // TODO lgw_freq_plan();
+
+    // TODO configure default mission (including ZoI)
+    // TODO display friends (networks , endpoints)
+
+    // TODO set callback on rx
+    // TODO set callback on period
 
     // TODO lgw_freq_plan();
 
